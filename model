@@ -1,0 +1,71 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, r2_score  # Import both metrics
+from sklearn.preprocessing import OneHotEncoder  # Use OneHotEncoder for categorical encoding
+import pickle  # Import pickle for model saving
+
+# Create sample data (replace with your actual data if available)
+data = pd.DataFrame({
+    'weather_conditions': ['Sunny', 'Rainy', 'Cloudy'],
+    'time_of_day': ['Morning', 'Afternoon', 'Evening'],
+    'road_conditions': ['Dry', 'Wet', 'Icy'],
+    'traffic_volume': [100, 200, 300],
+    'driver_behavior': ['Normal', 'Aggressive', 'Drowsy'],
+    'type_of_vehicle': ['Car', 'Truck', 'Motorcycle'],
+    'accident_severity': [1, 2, 3]
+})
+
+# Feature selection and encoding
+X = data[['weather_conditions', 'time_of_day', 'road_conditions', 'traffic_volume', 'driver_behavior', 'type_of_vehicle']]
+y = data['accident_severity']
+
+# Use OneHotEncoder for categorical features
+encoder = OneHotEncoder(handle_unknown='ignore')
+encoded_features = encoder.fit_transform(X)
+
+# Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(encoded_features, y, test_size=0.2, random_state=42)
+
+# Create and train the linear regression model
+model = LinearRegression()
+model.fit(X_train, y_train)
+
+# Make predictions on the test set
+y_pred = model.predict(X_test)
+
+# Evaluate model performance (use either MSE or R-squared)
+# Choose the metric that best suits your problem:
+# mse = mean_squared_error(y_test, y_pred)  # Mean Squared Error
+r2 = r2_score(y_test, y_pred)  # R-squared (consider sample size)
+
+if len(y_test) >= 2:  # Handle case with less than 2 samples for R-squared
+    print(f'R-squared score: {r2:.2f}')
+else:
+    print('R-squared score cannot be calculated with less than 2 samples.')
+
+# Save the model (ensure you have write permissions to the file path)
+try:
+    with open('/content/road_accidents_model.sav', 'wb') as f:  # Use '.sav' extension for clarity
+        pickle.dump(model, f)
+    print('Model saved successfully!')
+except FileNotFoundError:
+    print('Error: File path does not exist or write permission denied.')
+
+# Example hypothetical independent variables (ensure data types match training data)
+new_data = {
+    'weather_conditions': 'Sunny',
+    'time_of_day': 'Afternoon',
+    'road_conditions': 'Dry',
+    'traffic_volume': 150,
+    'driver_behavior': 'Normal',
+    'type_of_vehicle': 'Car'
+}
+
+# Prepare the new data for prediction
+new_X = pd.DataFrame([new_data])
+new_encoded_features = encoder.transform(new_X)  # Encode new data using the fitted encoder
+
+# Predict the accident severity
+predicted_severity = model.predict(new_encoded_features)[0]
+print(f'Predicted accident severity: {predicted_severity:.0f}')
